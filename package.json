@@ -1,6 +1,6 @@
 {
-  "name": "webvr-polyfill",
-  "version": "0.10.5",
+  "name": "tamu-webvr-polyfill",
+  "version": "0.10.64",
   "homepage": "https://github.com/immersive-web/webvr-polyfill",
   "authors": [
     "Boris Smus <boris@smus.com>",
@@ -23,7 +23,7 @@
     "rollup-plugin-json": "^2.3.0",
     "rollup-plugin-node-resolve": "^3.0.0",
     "rollup-plugin-uglify": "^2.0.1",
-    "semver": "^5.3.0"
+    "semver": "^5.3.1"
   },
   "main": "build/webvr-polyfill.js",
   "keywords": [
@@ -46,6 +46,6 @@
     "url": "https://github.com/immersive-web/webvr-polyfill/issues"
   },
   "dependencies": {
-    "cardboard-vr-display": "1.0.11"
+    "tamu-cardboard-vr-display": "1.0.21"
   }
 }

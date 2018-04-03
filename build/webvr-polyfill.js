@@ -284,6 +284,9 @@ var MAX_TIMESTEP = 1;
 var base64 = function base64(mimeType, _base) {
   return 'data:' + mimeType + ';base64,' + _base;
 };
+var clamp = function clamp(value, min, max) {
+  return Math.min(Math.max(min, value), max);
+};
 var lerp = function lerp(a, b, t) {
   return a + (b - a) * t;
 };
@@ -1407,6 +1410,28 @@ Distortion.prototype.distort = function (radius) {
 };
 var degToRad = Math.PI / 180;
 var radToDeg = 180 / Math.PI;
+var Vector2 = function Vector2(x, y) {
+  this.x = x || 0;
+  this.y = y || 0;
+};
+Vector2.prototype = {
+  constructor: Vector2,
+  set: function set(x, y) {
+    this.x = x;
+    this.y = y;
+    return this;
+  },
+  copy: function copy(v) {
+    this.x = v.x;
+    this.y = v.y;
+    return this;
+  },
+  subVectors: function subVectors(a, b) {
+    this.x = a.x - b.x;
+    this.y = a.y - b.y;
+    return this;
+  }
+};
 var Vector3 = function Vector3(x, y, z) {
   this.x = x || 0;
   this.y = y || 0;
@@ -2114,8 +2139,55 @@ PosePredictor.prototype.getPrediction = function (currentQ, gyro, timestampS) {
   this.previousTimestampS = timestampS;
   return this.outQ;
 };
+var ROTATE_SPEED = 0.5;
+function TouchPanner() {
+    window.addEventListener('touchstart', this.onTouchStart_.bind(this));
+    window.addEventListener('touchmove', this.onTouchMove_.bind(this));
+    window.addEventListener('touchend', this.onTouchEnd_.bind(this));
+    this.isTouching = false;
+    this.rotateStart = new Vector2();
+    this.rotateEnd = new Vector2();
+    this.rotateDelta = new Vector2();
+    this.theta = 0;
+    this.phi = 0;
+    this.orientation = new Quaternion();
+}
+TouchPanner.prototype.getOrientation = function () {
+    this.orientation.setFromEulerXYZ(this.phi, this.theta, 0);
+    return this.orientation;
+};
+TouchPanner.prototype.resetSensor = function () {
+    this.theta = 0;
+    this.phi = 0;
+};
+TouchPanner.prototype.onTouchStart_ = function (e) {
+    if (!e.touches || e.touches.length != 1) {
+        return;
+    }
+    this.rotateStart.set(e.touches[0].pageX, e.touches[0].pageY);
+    this.isTouching = true;
+};
+TouchPanner.prototype.onTouchMove_ = function (e) {
+    if (!this.isTouching) {
+        return;
+    }
+    this.rotateEnd.set(e.touches[0].pageX, e.touches[0].pageY);
+    this.rotateDelta.subVectors(this.rotateEnd, this.rotateStart);
+    this.rotateStart.copy(this.rotateEnd);
+    if (isIOS()) {
+        this.rotateDelta.x *= -1;
+    }
+    var element = document.body;
+    this.theta += 2 * Math.PI * this.rotateDelta.x / element.clientWidth * ROTATE_SPEED;
+    this.phi += 2 * Math.PI * this.rotateDelta.y / element.clientHeight * ROTATE_SPEED;
+    this.phi = clamp(this.phi, -Math.PI / 2, Math.PI / 2);
+};
+TouchPanner.prototype.onTouchEnd_ = function (e) {
+    this.isTouching = false;
+};
 function FusionPoseSensor(kFilter, predictionTime, yawOnly, isDebug) {
   this.yawOnly = yawOnly;
+  this.touchPanner = new TouchPanner();
   this.accelerometer = new Vector3();
   this.gyroscope = new Vector3();
   this.filter = new ComplementaryFilter(kFilter, isDebug);
@@ -2165,21 +2237,22 @@ FusionPoseSensor.prototype.getOrientation = function () {
       return q;
     }();
     orientation = this._deviceOrientationQ;
-    var out = new Quaternion();
-    out.copy(orientation);
-    out.multiply(this.deviceOrientationFilterToWorldQ);
-    out.multiply(this.resetQ);
-    out.multiply(this.worldToScreenQ);
-    out.multiplyQuaternions(this.deviceOrientationFixQ, out);
+    var _out = new Quaternion();
+    _out.copy(orientation);
+    _out.multiply(this.deviceOrientationFilterToWorldQ);
+    _out.multiply(this.resetQ);
+    _out.multiply(this.worldToScreenQ);
+    _out.multiplyQuaternions(this.deviceOrientationFixQ, _out);
+    _out.multiply(this.touchPanner.getOrientation());
     if (this.yawOnly) {
-      out.x = 0;
-      out.z = 0;
-      out.normalize();
+      _out.x = 0;
+      _out.z = 0;
+      _out.normalize();
     }
-    this.orientationOut_[0] = out.x;
-    this.orientationOut_[1] = out.y;
-    this.orientationOut_[2] = out.z;
-    this.orientationOut_[3] = out.w;
+    this.orientationOut_[0] = _out.x;
+    this.orientationOut_[1] = _out.y;
+    this.orientationOut_[2] = _out.z;
+    this.orientationOut_[3] = _out.w;
     return this.orientationOut_;
   } else {
     var filterOrientation = this.filter.getOrientation();
@@ -2190,6 +2263,7 @@ FusionPoseSensor.prototype.getOrientation = function () {
   out.multiply(this.resetQ);
   out.multiply(orientation);
   out.multiply(this.worldToScreenQ);
+  out.multiply(this.touchPanner.getOrientation());
   if (this.yawOnly) {
     out.x = 0;
     out.z = 0;
@@ -2669,7 +2743,7 @@ ViewerSelector.prototype.createButton_ = function (label, onclick) {
 };
 var commonjsGlobal$$1 = typeof window !== 'undefined' ? window : typeof commonjsGlobal !== 'undefined' ? commonjsGlobal : typeof self !== 'undefined' ? self : {};
 function unwrapExports$$1 (x) {
-	return x && x.__esModule ? x['default'] : x;
+	return x && x.__esModule && Object.prototype.hasOwnProperty.call(x, 'default') ? x['default'] : x;
 }
 function createCommonjsModule$$1(fn, module) {
 	return module = { exports: {} }, fn(module, module.exports), module.exports;
@@ -3370,7 +3444,7 @@ return CardboardVRDisplay;
 });
 var CardboardVRDisplay = unwrapExports(cardboardVrDisplay);
 
-var version = "0.10.5";
+var version = "0.10.64";
 
 var DefaultConfig = {
   PROVIDE_MOBILE_VRDISPLAY: true,
