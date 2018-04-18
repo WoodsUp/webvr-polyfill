@@ -14,7 +14,7 @@
  */
 
 import { extend, isMobile, race, copyArray } from './util';
-import CardboardVRDisplay from 'cardboard-vr-display';
+import CardboardVRDisplay from 'tamu-cardboard-vr-display';
 import { version } from '../package.json';
 import DefaultConfig from './config';
 

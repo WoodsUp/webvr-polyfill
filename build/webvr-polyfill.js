@@ -2153,7 +2153,7 @@ function TouchPanner() {
     this.orientation = new Quaternion();
 }
 TouchPanner.prototype.getOrientation = function () {
-    this.orientation.setFromEulerXYZ(this.phi, this.theta, 0);
+    this.orientation.setFromEulerXYZ(0, 0, this.theta);
     return this.orientation;
 };
 TouchPanner.prototype.resetSensor = function () {
@@ -2213,6 +2213,7 @@ function FusionPoseSensor(kFilter, predictionTime, yawOnly, isDebug) {
   }
   this.resetQ = new Quaternion();
   this.orientationOut_ = new Float32Array(4);
+  this.enableTouchPanner = false;
   this.start();
 }
 FusionPoseSensor.prototype.getPosition = function () {
@@ -2261,9 +2262,9 @@ FusionPoseSensor.prototype.getOrientation = function () {
   var out = new Quaternion();
   out.copy(this.filterToWorldQ);
   out.multiply(this.resetQ);
+  out.multiply(this.touchPanner.getOrientation());
   out.multiply(orientation);
   out.multiply(this.worldToScreenQ);
-  out.multiply(this.touchPanner.getOrientation());
   if (this.yawOnly) {
     out.x = 0;
     out.z = 0;
@@ -3444,7 +3445,7 @@ return CardboardVRDisplay;
 });
 var CardboardVRDisplay = unwrapExports(cardboardVrDisplay);
 
-var version = "0.10.64";
+var version = "0.10.65";
 
 var DefaultConfig = {
   PROVIDE_MOBILE_VRDISPLAY: true,
