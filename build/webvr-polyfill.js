@@ -1944,7 +1944,7 @@ Dpdb.prototype.recalculateDeviceParams_ = function () {
       this.onDeviceParamsUpdated(this.deviceParams);
     }
   } else {
-    console.error('Failed to recalculate device parameters.');
+    console.warn('Failed to recalculate device parameters.');
   }
 };
 Dpdb.prototype.calcDeviceParams_ = function () {

@@ -1,6 +1,6 @@
 {
   "name": "tamu-webvr-polyfill",
-  "version": "0.10.65",
+  "version": "0.10.66",
   "homepage": "https://github.com/immersive-web/webvr-polyfill",
   "authors": [
     "Boris Smus <boris@smus.com>",
@@ -46,6 +46,6 @@
     "url": "https://github.com/immersive-web/webvr-polyfill/issues"
   },
   "dependencies": {
-    "tamu-cardboard-vr-display": "1.0.22"
+    "tamu-cardboard-vr-display": "1.0.23"
   }
 }
